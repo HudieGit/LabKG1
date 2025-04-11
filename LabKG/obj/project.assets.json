@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\C++\\LabKG\\LabKG.csproj",
+      "projectUniqueName": "D:\\С++\\LabKG1\\LabKG\\LabKG.csproj",
       "projectName": "LabKG",
-      "projectPath": "E:\\C++\\LabKG\\LabKG.csproj",
+      "projectPath": "D:\\С++\\LabKG1\\LabKG\\LabKG.csproj",
       "packagesPath": "C:\\Users\\lemon\\.nuget\\packages\\",
-      "outputPath": "E:\\C++\\LabKG\\obj\\",
+      "outputPath": "D:\\С++\\LabKG1\\LabKG\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -51,7 +51,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.200"
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net8.0-windows7.0": {
@@ -75,7 +75,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.201/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -258,13 +258,13 @@ namespace LabKG
         protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
         {
             int[,] kernel = {
-            {  0, +1,  0 },
-            { -1,  0, +1 },
+            {  0, 1,  0 },
+            { -1,  0, 1 },
             {  0, -1,  0 }
             };
 
             int radius = 1;
-            int intensity = 0;
+            int R = 0, G = 0, B = 0;
 
             for (int i = -radius; i <= radius; i++)
             {
@@ -274,15 +274,22 @@ namespace LabKG
                     int idY = Clamp(y + j, 0, sourceImage.Height - 1);
                     Color neighborColor = sourceImage.GetPixel(idX, idY);
 
-                    int gray = (int)(0.299 * neighborColor.R + 0.587 * neighborColor.G + 0.114 * neighborColor.B);
-
-                    intensity += gray * kernel[i + radius, j + radius];
+                    R += Clamp((int)(neighborColor.R * kernel[x + j, y + i]), 0, 255);
+                    G += Clamp((int)(neighborColor.G * kernel[x + j, y + i]), 0, 255);
+                    B += Clamp((int)(neighborColor.B * kernel[x + j, y + i]), 0, 255);
                 }
             }
 
-            intensity = Clamp(intensity + 100, 0, 255);
+            int Brightness = 100;
+            R += Brightness;
+            G += Brightness;
+            B += Brightness;
 
-            return Color.FromArgb(intensity, intensity, intensity);
+            int intensity = Clamp((int)(0.299 * R + 0.587 * G + 0.114 * B), 0, 255);
+
+            Color resultColor = Color.FromArgb(intensity, intensity, intensity);
+           
+            return resultColor;
         }
     }
 
@@ -484,13 +491,15 @@ namespace LabKG
 
             int minR = 255, minG = 255, minB = 255;
 
-            int radius = 1;
+            int mH = 3, mW = 3;
+            int radiusX = mW / 2;
+            int radiusY = mH / 2;
 
-            for (int j = -radius; j <= radius; j++)
+            for (int j = -radiusY; j <= radiusY; j++)
             {
-                for (int i = -radius; i <= radius; i++)
+                for (int i = -radiusX; i <= radiusX; i++)
                 {
-                    int maskValue = mask[j + radius, i + radius];
+                    int maskValue = mask[i + radiusX, j + radiusY];
                     if (maskValue == 0) continue;
 
                     int nx = Clamp(x + i, 0, sourceImage.Width - 1);
@@ -556,26 +565,33 @@ namespace Filter
 
             Bitmap result = new Bitmap(source.Width, source.Height);
 
-            float[,] kernelX = {
-            { -1,  0,  1 },
-            { -2,  0,  2 },
-            { -1,  0,  1 }
+            float[,] kernelX = new float[3,3] 
+            {
+                {   -3, 0,  +3 },
+                {  -10, 0, +10 },
+                {   -3, 0,  +3 }
             };
 
-            float[,] kernelY = {
-            { -1, -2, -1 },
-            {  0,  0,  0 },
-            {  1,  2,  1 }
+            float[,] kernelY = new float[3,3]
+            {
+               {  -3, -10, -3 },
+                {   0,   0,  0 },
+                {  +3, +10, +3 }
             };
 
             int radius = 1;
-            float gradX_R = 0, gradX_G = 0, gradX_B = 0;
-            float gradY_R = 0, gradY_G = 0, gradY_B = 0;
+
 
             for (int y = 0; y < source.Height; y++)
             {
                 for (int x = 0; x < source.Width; x++)
                 {
+
+                    int radiusX = kernelY.GetLength(0) / 2;
+                    int radiusY = kernelY.GetLength(1) / 2;
+
+                    float gradX_R = 0, gradX_G = 0, gradX_B = 0;
+                    float gradY_R = 0, gradY_G = 0, gradY_B = 0;
 
                     for (int i = -radius; i <= radius; i++)
                     {
@@ -621,34 +637,34 @@ namespace Filter2
     {
         public static Bitmap Execute(Bitmap source)
         {
-            int width = source.Width;
-            int height = source.Height;
-
-            Bitmap result = new Bitmap(width, height);
-
-            // Структурный элемент
-            int[,] kernel = {
+            int[,] mask = {
                 { 0, 1, 0 },
                 { 1, 1, 1 },
                 { 0, 1, 0 }
             };
 
-            int radius = 1;
-            for (int y = 0; y < height; y++)
+            Bitmap image = new Bitmap(source.Width, source.Height);
+
+            int mH = 3, mW = 3;
+
+            for (int x = 0; x < source.Width; x++)
             {
-                for (int x = 0; x < width; x++)
+                for (int y = 0; y < source.Height; y++)
                 {
                     int minR = 255, minG = 255, minB = 255;
 
-                    for (int j = -radius; j <= radius; j++)
-                    {
-                        for (int i = -radius; i <= radius; i++)
-                        {
-                            int kernelValue = kernel[j + radius, i + radius];
-                            if (kernelValue == 0) continue;
+                    int radiusX = mW / 2;
+                    int radiusY = mH / 2;
 
-                            int nx = Clamp(x + i, 0, width - 1);
-                            int ny = Clamp(y + j, 0, height - 1);
+                    for (int j = -radiusY; j <= radiusY; j++)
+                    {
+                        for (int i = -radiusX; i <= radiusX; i++)
+                        {
+                            int maskValue = mask[i + radiusX, j + radiusY];
+                            if (maskValue == 0) continue;
+
+                            int nx = Clamp(x + i, 0, source.Width - 1);
+                            int ny = Clamp(y + j, 0, source.Height - 1);
                             Color neighbor = source.GetPixel(nx, ny);
 
                             minR = Math.Min(minR, neighbor.R);
@@ -656,12 +672,11 @@ namespace Filter2
                             minB = Math.Min(minB, neighbor.B);
                         }
                     }
-
-                    result.SetPixel(x, y, Color.FromArgb(minR, minG, minB));
+                    Color newColor = Color.FromArgb(minG, minG, minB);
+                    image.SetPixel(x, y, newColor);
                 }
             }
-
-            return result;
+            return image;
         }
 
         public static int Clamp(int value, int min, int max)
@@ -733,6 +748,74 @@ namespace Filter
             if (value < min) return min;
             if (value > max) return max;
             return value;
+        }
+    }
+}
+
+
+
+// 6 - Emboss
+
+namespace Filter3
+{
+    public class Filter
+    {
+        public static int Clamp(int value, int min, int max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
+
+        public static Bitmap Execute(Bitmap sourceImage)
+        {
+            float[,] kernel = new float[3, 3]
+            {
+                {  0, 1,  0 },
+                { -1,  0, 1 },
+                {  0, -1,  0 }
+            };
+
+            Bitmap image = new Bitmap(sourceImage.Width, sourceImage.Height);
+
+            for (int x = 0; x < sourceImage.Width; x++)
+                for (int y = 0; y < sourceImage.Height; y++)
+                {
+                    int radiusX = kernel.GetLength(0) / 2;
+                    int radiusY = kernel.GetLength(1) / 2;
+
+                    int R = 0, G = 0, B = 0;
+                    
+                    for (int l = -radiusY; l <= radiusY; l++)
+                        for (int w = -radiusX; w <= radiusX; w++)
+                        {
+                            int idx = Clamp(x + w, 0, sourceImage.Width - 1);
+                            int idy = Clamp(y + l, 0, sourceImage.Height - 1);
+
+                            Color neighborColor = sourceImage.GetPixel(idx, idy);
+                            R += (int)(neighborColor.R * kernel[w + radiusX, l + radiusY]);
+                            G += (int)(neighborColor.G * kernel[w + radiusX, l + radiusY]);
+                            B += (int)(neighborColor.B * kernel[w + radiusX, l + radiusY]);
+                        }
+
+                    R = Clamp(R, 0, 255);
+                    G = Clamp(G, 0, 255);
+                    B = Clamp(B, 0, 255);
+
+                    int Brightness = 100;
+
+                    R += Brightness;
+                    G += Brightness;
+                    B += Brightness;
+
+                    int intensity = Clamp((int)(0.299 * R + 0.587 * G + 0.114 * B), 0, 255);
+
+                    Color resultColor = Color.FromArgb(intensity, intensity, intensity);
+                    
+                    image.SetPixel(x, y, resultColor);
+                }
+
+            return image;
         }
     }
 }
