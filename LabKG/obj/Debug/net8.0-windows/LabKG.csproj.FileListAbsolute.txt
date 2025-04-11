@@ -1,0 +1,17 @@
+E:\C++\LabKG\bin\Debug\net8.0-windows\LabKG.exe
+E:\C++\LabKG\bin\Debug\net8.0-windows\LabKG.deps.json
+E:\C++\LabKG\bin\Debug\net8.0-windows\LabKG.runtimeconfig.json
+E:\C++\LabKG\bin\Debug\net8.0-windows\LabKG.dll
+E:\C++\LabKG\bin\Debug\net8.0-windows\LabKG.pdb
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.Form1.resources
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.csproj.GenerateResource.cache
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.GeneratedMSBuildEditorConfig.editorconfig
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.AssemblyInfoInputs.cache
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.AssemblyInfo.cs
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.csproj.CoreCompileInputs.cache
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.dll
+E:\C++\LabKG\obj\Debug\net8.0-windows\refint\LabKG.dll
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.pdb
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.genruntimeconfig.cache
+E:\C++\LabKG\obj\Debug\net8.0-windows\ref\LabKG.dll
+E:\C++\LabKG\obj\Debug\net8.0-windows\LabKG.Properties.Resources.resources
