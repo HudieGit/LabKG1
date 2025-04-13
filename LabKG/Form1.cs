@@ -132,12 +132,6 @@ namespace LabKG
             backgroundWorker1.RunWorkerAsync(filter);
         }
 
-        private void sharpenToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Filters filter = new SharpenFilter();
-            backgroundWorker1.RunWorkerAsync(filter);
-        }
-
         private void shiftToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Filters filter = new ShiftFilter();
@@ -189,6 +183,12 @@ namespace LabKG
         private void medianFilterToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Filters filter = new MedianFilter();
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
+
+        private void sharraToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Filters filter = new SharraFilter();
             backgroundWorker1.RunWorkerAsync(filter);
         }
     }

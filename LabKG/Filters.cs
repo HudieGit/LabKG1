@@ -227,19 +227,56 @@ namespace LabKG
         }
     }
 
-    class SharpenFilter : MatrixFilter
+    class SharraFilter : Filters
     {
-        public SharpenFilter()
+        protected override Color calculateNewPixelColor(Bitmap sourceimage, int x, int y)
         {
-            kernel = new float[,]
+            // Оператор Собеля по X
+            float[,] kernelX = new float[3, 3]
             {
-            {  0, -1,  0 },
-            { -1,  5, -1 },
-            {  0, -1,  0 }
+                {   -3, 0,  +3 },
+                {  -10, 0, +10 },
+                {   -3, 0,  +3 }
             };
+
+            float[,] kernelY = new float[3, 3]
+            {
+               {  -3, -10, -3 },
+                {   0,   0,  0 },
+                {  +3, +10, +3 }
+            };
+
+            int radius = 1; // Поскольку размер ядра 3x3
+            float gradX_R = 0, gradX_G = 0, gradX_B = 0;
+            float gradY_R = 0, gradY_G = 0, gradY_B = 0;
+
+            // Проходим по ядру 3x3
+            for (int i = -radius; i <= radius; i++)
+            {
+                for (int j = -radius; j <= radius; j++)
+                {
+                    int idX = Clamp(x + i, 0, sourceimage.Width - 1);
+                    int idY = Clamp(y + j, 0, sourceimage.Height - 1);
+                    Color neighborColor = sourceimage.GetPixel(idX, idY);
+
+                    gradX_R += neighborColor.R * kernelX[i + radius, j + radius];
+                    gradX_G += neighborColor.G * kernelX[i + radius, j + radius];
+                    gradX_B += neighborColor.B * kernelX[i + radius, j + radius];
+
+                    gradY_R += neighborColor.R * kernelY[i + radius, j + radius];
+                    gradY_G += neighborColor.G * kernelY[i + radius, j + radius];
+                    gradY_B += neighborColor.B * kernelY[i + radius, j + radius];
+                }
+            }
+
+            // Вычисляем общий градиент по формуле
+            int R = Clamp((int)Math.Sqrt(gradX_R * gradX_R + gradY_R * gradY_R), 0, 255);
+            int G = Clamp((int)Math.Sqrt(gradX_G * gradX_G + gradY_G * gradY_G), 0, 255);
+            int B = Clamp((int)Math.Sqrt(gradX_B * gradX_B + gradY_B * gradY_B), 0, 255);
+
+            return Color.FromArgb(R, G, B);
         }
     }
-
     class ShiftFilter : Filters
     {
         private int shiftX = 50;
@@ -555,6 +592,13 @@ namespace LabKG
         }
     }
 }
+
+
+
+
+
+
+
 namespace Filter
 {
     public class Filter
