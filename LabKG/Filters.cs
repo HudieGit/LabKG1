@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,10 @@ using System.Drawing;
 using System.ComponentModel;
 using LabKG;
 using System.Net.NetworkInformation;
+using System.Security.Cryptography;
+using static System.Net.Mime.MediaTypeNames;
+using System.Security.Cryptography.Xml;
+using System.Windows.Forms;
 
 namespace LabKG
 {
@@ -28,7 +33,7 @@ namespace LabKG
             return resultImage;
         }
 
-        public int Clamp(int value, int min, int max)
+        static public int Clamp(int value, int min, int max)
         {
             if (value < min) return min;
             if (value > max) return max;
@@ -591,275 +596,94 @@ namespace LabKG
             return medianColor;
         }
     }
-}
 
-
-
-
-
-
-
-namespace Filter
-{
-    public class Filter
+    class StatisticalColorCorrection : Filters
     {
+        public double[] meanSrc;
+        public double[] meanRef;
+        public double[] stdSrc;
+        public double[] stdRef;
 
-        public static Bitmap Execute(Bitmap source)
+        public StatisticalColorCorrection(Bitmap source)
         {
+            Bitmap imageRefernce;
+            OpenFileDialog ofd = new OpenFileDialog();
 
-            Bitmap result = new Bitmap(source.Width, source.Height);
-
-            float[,] kernelX = new float[3,3] 
+            ofd.Filter = "Image Files|*.png; *.jpg; *.bmp | All files (*.*)| *.*";
+            if (ofd.ShowDialog() == DialogResult.OK)
             {
-                {   -3, 0,  +3 },
-                {  -10, 0, +10 },
-                {   -3, 0,  +3 }
-            };
-
-            float[,] kernelY = new float[3,3]
+                imageRefernce = new Bitmap(ofd.FileName);
+            }
+            else
             {
-               {  -3, -10, -3 },
-                {   0,   0,  0 },
-                {  +3, +10, +3 }
-            };
+                throw new InvalidOperationException("you NEED to chose an image");
+            }
 
-            int radius = 1;
+            (meanSrc, stdSrc) = GetImageStats(source);
+            (meanRef, stdRef) = GetImageStats(imageRefernce);
 
+        }
 
-            for (int y = 0; y < source.Height; y++)
+        protected override Color calculateNewPixelColor(Bitmap sourceImage, int x, int y)
+        {
+            Color pixel = sourceImage.GetPixel(x, y);
+            int r = AdjustChannel(pixel.R, meanSrc[0], stdSrc[0], meanRef[0], stdRef[0]);
+            int g = AdjustChannel(pixel.G, meanSrc[1], stdSrc[1], meanRef[1], stdRef[1]);
+            int b = AdjustChannel(pixel.B, meanSrc[2], stdSrc[2], meanRef[2], stdRef[2]);
+
+            return Color.FromArgb(r, g, b);
+        }
+        private static int AdjustChannel(int value, double meanSrc, double stdSrc, double meanRef, double stdRef)
+        {
+            if (stdSrc == 0) stdSrc = 1;
+            double result = ((value - meanSrc) / stdSrc) * stdRef + meanRef;
+            return Clamp((int)Math.Round(result), 0, 255);
+        }
+
+        private static (double[] mean, double[] std) GetImageStats(Bitmap image)
+        {
+            int width = image.Width;
+            int height = image.Height;
+            int totalPixels = width * height;
+
+            double sumR = 0, sumG = 0, sumB = 0;
+            double sumSqR = 0, sumSqG = 0, sumSqB = 0;
+
+            for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < source.Width; x++)
+                for (int x = 0; x < width; x++)
                 {
+                    Color pixel = image.GetPixel(x, y);
+                    sumR += pixel.R;
+                    sumG += pixel.G;
+                    sumB += pixel.B;
 
-                    int radiusX = kernelY.GetLength(0) / 2;
-                    int radiusY = kernelY.GetLength(1) / 2;
-
-                    float gradX_R = 0, gradX_G = 0, gradX_B = 0;
-                    float gradY_R = 0, gradY_G = 0, gradY_B = 0;
-
-                    for (int i = -radius; i <= radius; i++)
-                    {
-                        for (int j = -radius; j <= radius; j++)
-                        {
-                            int idX = Clamp(x + i, 0, source.Width - 1);
-                            int idY = Clamp(y + j, 0, source.Height - 1);
-                            Color neighborColor = source.GetPixel(idX, idY);
-
-                            gradX_R += neighborColor.R * kernelX[i + radius, j + radius];
-                            gradX_G += neighborColor.G * kernelX[i + radius, j + radius];
-                            gradX_B += neighborColor.B * kernelX[i + radius, j + radius];
-
-                            gradY_R += neighborColor.R * kernelY[i + radius, j + radius];
-                            gradY_G += neighborColor.G * kernelY[i + radius, j + radius];
-                            gradY_B += neighborColor.B * kernelY[i + radius, j + radius];
-                        }
-                    }
-
-                    int R = Clamp((int)Math.Sqrt(gradX_R * gradX_R + gradY_R * gradY_R), 0, 255);
-                    int G = Clamp((int)Math.Sqrt(gradX_G * gradX_G + gradY_G * gradY_G), 0, 255);
-                    int B = Clamp((int)Math.Sqrt(gradX_B * gradX_B + gradY_B * gradY_B), 0, 255);
-                    result.SetPixel(x, y, Color.FromArgb(R, G, B));
+                    sumSqR += pixel.R * pixel.R;
+                    sumSqG += pixel.G * pixel.G;
+                    sumSqB += pixel.B * pixel.B;
                 }
             }
 
-            return result;
-        }
+            double meanR = sumR / totalPixels;
+            double meanG = sumG / totalPixels;
+            double meanB = sumB / totalPixels;
 
-        public static int Clamp(int value, int min, int max)
-        {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
-        }
-    }
-}
+            double stdR = (double)Math.Sqrt(sumSqR / totalPixels - meanR * meanR);
+            double stdG = (double)Math.Sqrt(sumSqG / totalPixels - meanG * meanG);
+            double stdB = (double)Math.Sqrt(sumSqB / totalPixels - meanB * meanB);
 
-
-namespace Filter2
-{
-    public class Filter
-    {
-        public static Bitmap Execute(Bitmap source)
-        {
-            int[,] mask = {
-                { 0, 1, 0 },
-                { 1, 1, 1 },
-                { 0, 1, 0 }
-            };
-
-            Bitmap image = new Bitmap(source.Width, source.Height);
-
-            int mH = 3, mW = 3;
-
-            for (int x = 0; x < source.Width; x++)
-            {
-                for (int y = 0; y < source.Height; y++)
-                {
-                    int minR = 255, minG = 255, minB = 255;
-
-                    int radiusX = mW / 2;
-                    int radiusY = mH / 2;
-
-                    for (int j = -radiusY; j <= radiusY; j++)
-                    {
-                        for (int i = -radiusX; i <= radiusX; i++)
-                        {
-                            int maskValue = mask[i + radiusX, j + radiusY];
-                            if (maskValue == 0) continue;
-
-                            int nx = Clamp(x + i, 0, source.Width - 1);
-                            int ny = Clamp(y + j, 0, source.Height - 1);
-                            Color neighbor = source.GetPixel(nx, ny);
-
-                            minR = Math.Min(minR, neighbor.R);
-                            minG = Math.Min(minG, neighbor.G);
-                            minB = Math.Min(minB, neighbor.B);
-                        }
-                    }
-                    Color newColor = Color.FromArgb(minG, minG, minB);
-                    image.SetPixel(x, y, newColor);
-                }
-            }
-            return image;
-        }
-
-        public static int Clamp(int value, int min, int max)
-        {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
+            return (
+                new double[] { meanR, meanG, meanB },
+                new double[] { stdR, stdG, stdB }
+            );
         }
     }
 }
 
 
 
-namespace Filter
-{
-    public class Filter3
-    {
-        public static Bitmap Execute(Bitmap source)
-        {
-            Bitmap result = new Bitmap(source.Width, source.Height);
-
-            float[,] kernelX = {
-                { -1,  0,  1 },
-                { -2,  0,  2 },
-                { -1,  0,  1 }
-            };
-
-            float[,] kernelY = {
-                { -1, -2, -1 },
-                {  0,  0,  0 },
-                {  1,  2,  1 }
-            };
-
-            int radius = 1;
-
-            for (int y = 0; y < source.Height; y++)
-            {
-                for (int x = 0; x < source.Width; x++)
-                {
-                    double gradX = 0;
-                    double gradY = 0;
-
-                    for (int i = -radius; i <= radius; i++)
-                    {
-                        for (int j = -radius; j <= radius; j++)
-                        {
-                            int idX = Clamp(x + i, 0, source.Width - 1);
-                            int idY = Clamp(y + j, 0, source.Height - 1);
-                            Color color = source.GetPixel(idX, idY);
-
-                            double intensity = 0.299f * color.R + 0.587f * color.G + 0.114f * color.B;
-
-                            gradX += intensity * kernelX[i + radius, j + radius];
-                            gradY += intensity * kernelY[i + radius, j + radius];
-                        }
-                    }
-
-                    int gradient = Clamp((int)Math.Sqrt(gradX * gradX + gradY * gradY), 0, 255);
-
-                    result.SetPixel(x, y, Color.FromArgb(gradient, gradient, gradient));
-                }
-            }
-
-            return result;
-        }
-
-        public static int Clamp(int value, int min, int max)
-        {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
-        }
-    }
-}
 
 
 
-// 6 - Emboss
 
-namespace Filter3
-{
-    public class Filter
-    {
-        public static int Clamp(int value, int min, int max)
-        {
-            if (value < min) return min;
-            if (value > max) return max;
-            return value;
-        }
 
-        public static Bitmap Execute(Bitmap sourceImage)
-        {
-            float[,] kernel = new float[3, 3]
-            {
-                {  0, 1,  0 },
-                { -1,  0, 1 },
-                {  0, -1,  0 }
-            };
-
-            Bitmap image = new Bitmap(sourceImage.Width, sourceImage.Height);
-
-            for (int x = 0; x < sourceImage.Width; x++)
-                for (int y = 0; y < sourceImage.Height; y++)
-                {
-                    int radiusX = kernel.GetLength(0) / 2;
-                    int radiusY = kernel.GetLength(1) / 2;
-
-                    int R = 0, G = 0, B = 0;
-                    
-                    for (int l = -radiusY; l <= radiusY; l++)
-                        for (int w = -radiusX; w <= radiusX; w++)
-                        {
-                            int idx = Clamp(x + w, 0, sourceImage.Width - 1);
-                            int idy = Clamp(y + l, 0, sourceImage.Height - 1);
-
-                            Color neighborColor = sourceImage.GetPixel(idx, idy);
-                            R += (int)(neighborColor.R * kernel[w + radiusX, l + radiusY]);
-                            G += (int)(neighborColor.G * kernel[w + radiusX, l + radiusY]);
-                            B += (int)(neighborColor.B * kernel[w + radiusX, l + radiusY]);
-                        }
-
-                    R = Clamp(R, 0, 255);
-                    G = Clamp(G, 0, 255);
-                    B = Clamp(B, 0, 255);
-
-                    int Brightness = 100;
-
-                    R += Brightness;
-                    G += Brightness;
-                    B += Brightness;
-
-                    int intensity = Clamp((int)(0.299 * R + 0.587 * G + 0.114 * B), 0, 255);
-
-                    Color resultColor = Color.FromArgb(intensity, intensity, intensity);
-                    
-                    image.SetPixel(x, y, resultColor);
-                }
-
-            return image;
-        }
-    }
-}

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LabKG")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+df0c87cf856f3707b71b3be23c2ea8a5950f3f19")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4b67838a15ab7ef75eb4c41ad97168788ab7bb35")]
 [assembly: System.Reflection.AssemblyProductAttribute("LabKG")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LabKG")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

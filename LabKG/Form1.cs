@@ -191,5 +191,11 @@ namespace LabKG
             Filters filter = new SharraFilter();
             backgroundWorker1.RunWorkerAsync(filter);
         }
+
+        private void statisticalColorCorrectionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Filters filter = new StatisticalColorCorrection(image);
+            backgroundWorker1.RunWorkerAsync(filter);
+        }
     }
 }
